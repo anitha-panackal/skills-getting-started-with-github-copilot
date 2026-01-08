@@ -1,13 +1,54 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const activitiesList = document.getElementById("activities-list");
-  const activitySelect = document.getElementById("activity");
+document.addEventListener("DOMContentLoaded", function() {
+    fetchParticipants();
+});
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
 
   // Function to fetch activities from API
-  async function fetchActivities() {
-    try {
-      const response = await fetch("/activities");
+  function fetchParticipants() {
+    fetch('/participants')
+      .then(response => response.json())
+      .then(data => {
+        const list = document.getElementById('participants-list');
+        list.innerHTML = '';
+        data.forEach(participant => {
+          const li = document.createElement('li');
+          li.style.listStyleType = 'none'; // Hide bullet points
+          li.style.display = 'flex';
+          li.style.alignItems = 'center';
+                
+          const nameSpan = document.createElement('span');
+          nameSpan.textContent = participant;
+          nameSpan.style.flexGrow = '1';
+
+          const deleteBtn = document.createElement('span');
+          deleteBtn.innerHTML = '&#128465;'; // Trash can icon
+          deleteBtn.title = 'Unregister';
+          deleteBtn.style.cursor = 'pointer';
+          deleteBtn.style.marginLeft = '10px';
+          deleteBtn.onclick = function() {
+            unregisterParticipant(participant);
+          };
+
+          li.appendChild(nameSpan);
+          li.appendChild(deleteBtn);
+          list.appendChild(li);
+        });
+      });
+  }
+
+  function unregisterParticipant(name) {
+    fetch(`/participants/${encodeURIComponent(name)}`, {
+      method: 'DELETE'
+    })
+    .then(response => {
+      if (response.ok) {
+        fetchParticipants();
+      } else {
+        alert('Failed to unregister participant.');
+      }
+    });
+  }
       const activities = await response.json();
 
       // Clear loading message
@@ -83,6 +124,7 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        fetchParticipants(); // Refresh participant list after successful signup
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
